@@ -5,17 +5,17 @@ KGE_DECLARE_SMART_PTR(MainStage);
 class MainStage : public Stage
 {
 public:
-	static MainStagePtr Create();
-
-	bool Init();
-
-	void OnUpdate(Duration dt) override;
+	MainStage();
 
 	void AddBounds();
 
 	void AddObstacles(Point position, Size size);
 
+	void InitPlanes();
+
 	PlanePtr AddPlane(Point position);
+
+	void OnUpdate(Duration dt) override;
 
 private:
 	PhysicWorldPtr world_;

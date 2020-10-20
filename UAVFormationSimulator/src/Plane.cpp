@@ -1,24 +1,14 @@
 #include "Plane.h"
 
-PlanePtr Plane::Create(PhysicWorldPtr world, Point position)
+Plane::Plane(PhysicWorldPtr world, Point position)
 {
-	PlanePtr ptr = new Plane;
-	if (ptr->Init(world, position))
-	{
-		return ptr;
-	}
-	return nullptr;
-}
-
-bool Plane::Init(PhysicWorldPtr world, Point position)
-{
-	float side = radius * math::Sqrt(2.0f);
-	float offset = radius - side / 2 + radius / 10;
+	float side = radius_ * math::Sqrt(2.0f);
+	float offset = radius_ - side / 2 + radius_ / 10;
 	Vector<Point> vertices = {
-		Point(radius, offset),
+		Point(radius_, offset),
 		Point(offset, side),
-		Point(radius, radius),
-		Point(radius * 2 - offset, side),
+		Point(radius_, radius_),
+		Point(radius_ * 2 - offset, side),
 	};
 
 	ShapeMaker maker;
@@ -29,27 +19,27 @@ bool Plane::Init(PhysicWorldPtr world, Point position)
 	ShapePtr chassis = maker.GetShape();
 	this->SetShape(chassis);
 
-	this->SetSize(radius * 2, radius * 2);
+	this->SetSize(radius_ * 2, radius_ * 2);
 	this->SetAnchor(0.5f, 0.5f);
 	this->SetPosition(position);
+	this->SetStrokeColor(Color::White);
 
-	PhysicBodyPtr body = PhysicBody::Create(world, PhysicBody::Type::Dynamic);
-	body->AddCircleShape(radius, 2.0f, 0.0f);
+	PhysicBodyPtr body = new PhysicBody(world, PhysicBody::Type::Dynamic);
+	body->AddCircleShape(radius_, 2.0f, 0.0f);
 	body->SetAngularDamping(20.0f);
 	body->SetLinearDamping(0.5f);
 	this->AddComponent(body);
 
-	SetStrokeColor(Color::White);
-	return true;
+	border_brush_ = new Brush(Color::BlueViolet);
 }
 
 void Plane::OnRender(RenderContext& ctx)
 {
 	ShapeActor::OnRender(ctx);
 
-	if (show_border)
+	if (show_border_)
 	{
-		ctx.SetCurrentBrush(Brush::Create(Color::BlueViolet));
-		ctx.DrawEllipse(Point(radius, radius), Vec2(radius, radius));
+		ctx.SetCurrentBrush(border_brush_);
+		ctx.DrawCircle(Point(radius_, radius_), radius_);
 	}
 }

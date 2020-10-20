@@ -6,13 +6,16 @@ class Simulator : public Runner
 public:
 	Simulator()
 	{
-		WindowPtr window = Window::Create("UAV Formation Simulator", 1000, 800);
-		SetMainWindow(window);
+		Settings s;
+		s.window.title = "UAV Formation Simulator";
+		s.window.width = 1000;
+		s.window.height = 800;
+		SetSettings(s);
 	}
 
 	void OnReady() override
 	{
-		MainStagePtr stage = MainStage::Create();
+		MainStagePtr stage = new MainStage;
 		Director::GetInstance().EnterStage(stage);
 	}
 };

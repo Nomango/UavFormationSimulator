@@ -1,19 +1,8 @@
 #include "MainStage.h"
 
-MainStagePtr MainStage::Create()
+MainStage::MainStage()
 {
-	MainStagePtr ptr = new MainStage;
-	if (ptr->Init())
-	{
-		return ptr;
-	}
-	return nullptr;
-}
-
-bool MainStage::Init()
-{
-	world_ = PhysicWorld::Create(Vec2(0.0f, 0.0f));
-	//world_->ShowDebugInfo(true);
+	world_ = new PhysicWorld(Vec2(0.0f, 0.0f));
 	this->AddComponent(world_);
 
 	AddBounds();
@@ -25,6 +14,50 @@ bool MainStage::Init()
 	AddObstacles(Point(GetWidth() / 2 - 300, 600), Size(200, 50));
 	AddObstacles(Point(GetWidth() / 2 + 300, 600), Size(200, 50));
 
+	InitPlanes();
+}
+
+void MainStage::AddBounds()
+{
+	Vector<Point> vertices = {
+		Point(),
+		Point(GetWidth(), 0),
+		Point(GetWidth(), GetHeight()),
+		Point(0, GetHeight()),
+	};
+
+	PhysicBodyPtr bounds = new PhysicBody(world_, PhysicBody::Type::Static);
+	for (size_t i = 0; i < vertices.size(); ++i)
+	{
+		if (i == vertices.size() - 1)
+		{
+			bounds->AddEdgeShape(vertices[i], vertices[0], 0.0f);
+		}
+		else
+		{
+			bounds->AddEdgeShape(vertices[i], vertices[i + 1], 0.0f);
+		}
+	}
+}
+
+void MainStage::AddObstacles(Point position, Size size)
+{
+	ShapePtr shape = Shape::CreateRect(Rect(0, 0, size.x, size.y));
+	ShapeActorPtr obstacle = new ShapeActor(shape);
+	obstacle->SetAnchor(0.5f, 0.5f);
+	obstacle->SetPosition(position);
+	obstacle->SetSize(size);
+	obstacle->SetStrokeColor(Color::White);
+
+	PhysicBodyPtr body = new PhysicBody(world_, PhysicBody::Type::Static);
+	body->AddRectShape(obstacle->GetSize(), 0.0f);
+	obstacle->AddComponent(body);
+
+	this->AddChild(obstacle);
+}
+
+void MainStage::InitPlanes()
+{
 	Vec2 offset = Vec2(50, 50);
 	Point size = this->GetSize();
 
@@ -47,7 +80,7 @@ bool MainStage::Init()
 		param.damping_ratio = 0.0f;
 		param.collide_connected = true;
 
-		DistanceJointPtr joint = DistanceJoint::Create(param);
+		DistanceJointPtr joint = new DistanceJoint(param);
 		world_->AddJoint(joint);
 	}
 
@@ -61,15 +94,38 @@ bool MainStage::Init()
 		param.damping_ratio = 0.0f;
 		param.collide_connected = true;
 
-		DistanceJointPtr joint = DistanceJoint::Create(param);
+		DistanceJointPtr joint = new DistanceJoint(param);
 		world_->AddJoint(joint);
 	}
-	return true;
+}
+
+PlanePtr MainStage::AddPlane(Point position)
+{
+	PlanePtr plane = new Plane(world_, position);
+	AddChild(plane);
+
+	if (!leader_)
+	{
+		leader_ = plane;
+	}
+	else
+	{
+		followers_.push_back(plane);
+	}
+	return plane;
 }
 
 void MainStage::OnUpdate(Duration dt)
 {
 	auto& input = Input::GetInstance();
+
+	// 按D键开启Debug模式
+	if (input.WasPressed(KeyCode::D))
+	{
+		static bool debug_mode = false;
+		debug_mode = !debug_mode;
+		world_->ShowDebugInfo(debug_mode);
+	}
 
 	if (input.IsDown(KeyCode::Left))
 	{
@@ -103,59 +159,4 @@ void MainStage::OnUpdate(Duration dt)
 		float rotation = follower->GetRotation();
 		follower->SetRotation(rotation + math::Sin(leader_->GetRotation() - rotation));
 	}
-}
-
-void MainStage::AddBounds()
-{
-	Vector<Point> vertices = {
-		Point(),
-		Point(GetWidth(), 0),
-		Point(GetWidth(), GetHeight()),
-		Point(0, GetHeight()),
-	};
-
-	PhysicBodyPtr bounds = PhysicBody::Create(world_, PhysicBody::Type::Static);
-	for (size_t i = 0; i < vertices.size(); ++i)
-	{
-		if (i == vertices.size() - 1)
-		{
-			bounds->AddEdgeShape(vertices[i], vertices[0], 0.0f);
-		}
-		else
-		{
-			bounds->AddEdgeShape(vertices[i], vertices[i + 1], 0.0f);
-		}
-	}
-}
-
-void MainStage::AddObstacles(Point position, Size size)
-{
-	ShapePtr shape = Shape::CreateRect(Rect(0, 0, size.x, size.y));
-	ShapeActorPtr obstacle = ShapeActor::Create(shape);
-	obstacle->SetAnchor(0.5f, 0.5f);
-	obstacle->SetPosition(position);
-	obstacle->SetSize(size);
-	obstacle->SetStrokeColor(Color::White);
-
-	PhysicBodyPtr body = PhysicBody::Create(world_, PhysicBody::Type::Static);
-	body->AddRectShape(obstacle->GetSize(), 0.0f);
-	obstacle->AddComponent(body);
-
-	this->AddChild(obstacle);
-}
-
-PlanePtr MainStage::AddPlane(Point position)
-{
-	PlanePtr plane = Plane::Create(world_, position);
-	AddChild(plane);
-
-	if (!leader_)
-	{
-		leader_ = plane;
-	}
-	else
-	{
-		followers_.push_back(plane);
-	}
-	return plane;
 }
