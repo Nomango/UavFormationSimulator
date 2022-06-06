@@ -22,7 +22,7 @@ Plane::Plane(PhysicWorldPtr world, Point position)
 	this->SetSize(radius_ * 2, radius_ * 2);
 	this->SetAnchor(0.5f, 0.5f);
 	this->SetPosition(position);
-	this->SetStrokeColor(Color::White);
+	this->SetStrokeColor(Color::Gray);
 
 	PhysicBodyPtr body = new PhysicBody(world, PhysicBody::Type::Dynamic);
 	body->AddCircleShape(radius_, 2.0f, 0.0f);
@@ -37,9 +37,8 @@ void Plane::OnRender(RenderContext& ctx)
 {
 	ShapeActor::OnRender(ctx);
 
-	if (show_border_)
-	{
-		ctx.SetCurrentBrush(border_brush_);
-		ctx.DrawCircle(Point(radius_, radius_), radius_);
-	}
+#if 0
+	ctx.SetCurrentBrush(border_brush_);
+	ctx.DrawCircle(Point(radius_, radius_), radius_);
+#endif
 }

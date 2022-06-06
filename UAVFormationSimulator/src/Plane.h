@@ -10,7 +10,6 @@ public:
 	void OnRender(RenderContext& ctx) override;
 
 private:
-	bool show_border_ = false;
 	float radius_ = 30.0f;
 	BrushPtr border_brush_;
 };

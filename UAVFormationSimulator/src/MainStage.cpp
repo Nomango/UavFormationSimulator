@@ -47,7 +47,7 @@ void MainStage::AddObstacle(Point position, Size size)
 	obstacle->SetAnchor(0.5f, 0.5f);
 	obstacle->SetPosition(position);
 	obstacle->SetSize(size);
-	obstacle->SetStrokeColor(Color::White);
+	obstacle->SetStrokeColor(Color::Gray);
 
 	PhysicBodyPtr body = new PhysicBody(world_, PhysicBody::Type::Static);
 	body->AddRectShape(obstacle->GetSize(), 0.0f);
@@ -107,6 +107,7 @@ PlanePtr MainStage::AddPlane(Point position)
 	if (!leader_)
 	{
 		leader_ = plane;
+		leader_->SetStrokeColor(Color::White);
 	}
 	else
 	{
