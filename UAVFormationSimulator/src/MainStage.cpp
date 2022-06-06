@@ -7,12 +7,12 @@ MainStage::MainStage()
 
 	AddBounds();
 
-	AddObstacles(Point(100, 100), Size(50, 80));
-	AddObstacles(Point(GetWidth() - 100, 100), Size(50, 80));
-	AddObstacles(Point(GetWidth() / 2 - 100, 400), Size(50, 200));
-	AddObstacles(Point(GetWidth() / 2 + 100, 400), Size(50, 200));
-	AddObstacles(Point(GetWidth() / 2 - 300, 600), Size(200, 50));
-	AddObstacles(Point(GetWidth() / 2 + 300, 600), Size(200, 50));
+	AddObstacle(Point(100, 100), Size(50, 80));
+	AddObstacle(Point(GetWidth() - 100, 100), Size(50, 80));
+	AddObstacle(Point(GetWidth() / 2 - 100, 400), Size(50, 200));
+	AddObstacle(Point(GetWidth() / 2 + 100, 400), Size(50, 200));
+	AddObstacle(Point(GetWidth() / 2 - 300, 600), Size(200, 50));
+	AddObstacle(Point(GetWidth() / 2 + 300, 600), Size(200, 50));
 
 	InitPlanes();
 }
@@ -40,7 +40,7 @@ void MainStage::AddBounds()
 	}
 }
 
-void MainStage::AddObstacles(Point position, Size size)
+void MainStage::AddObstacle(Point position, Size size)
 {
 	ShapePtr shape = Shape::CreateRect(Rect(0, 0, size.x, size.y));
 	ShapeActorPtr obstacle = new ShapeActor(shape);

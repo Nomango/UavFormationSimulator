@@ -9,7 +9,7 @@ public:
 
 	void AddBounds();
 
-	void AddObstacles(Point position, Size size);
+	void AddObstacle(Point position, Size size);
 
 	void InitPlanes();
 
