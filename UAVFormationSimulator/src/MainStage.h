@@ -1,7 +1,6 @@
 #pragma once
 #include "Plane.h"
 
-KGE_DECLARE_SMART_PTR(MainStage);
 class MainStage : public Stage
 {
 public:
@@ -13,12 +12,12 @@ public:
 
 	void InitPlanes();
 
-	PlanePtr AddPlane(Point position);
+	RefPtr<Plane> AddPlane(Point position);
 
 	void OnUpdate(Duration dt) override;
 
 private:
-	PhysicWorldPtr world_;
-	PlanePtr leader_;
-	Vector<PlanePtr> followers_;
+	RefPtr<physics::World> world_;
+	RefPtr<Plane> leader_;
+	Vector<RefPtr<Plane>> followers_;
 };

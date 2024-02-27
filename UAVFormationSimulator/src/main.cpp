@@ -1,6 +1,5 @@
 #include "MainStage.h"
 
-KGE_DECLARE_SMART_PTR(Simulator);
 class Simulator : public Runner
 {
 public:
@@ -15,7 +14,7 @@ public:
 
 	void OnReady() override
 	{
-		MainStagePtr stage = new MainStage;
+		RefPtr<MainStage> stage = new MainStage;
 		Director::GetInstance().EnterStage(stage);
 	}
 };
@@ -29,7 +28,7 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, LPWSTR, int)
 
 	try
 	{
-		SimulatorPtr simulator = new Simulator;
+		RefPtr<Simulator> simulator = new Simulator;
 		Application::GetInstance().Run(simulator);
 	}
 	catch (std::exception & e)

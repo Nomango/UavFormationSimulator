@@ -2,7 +2,7 @@
 
 MainStage::MainStage()
 {
-	world_ = new PhysicWorld(Vec2(0.0f, 0.0f));
+	world_ = new physics::World(b2Vec2(0.0f, 0.0f));
 	this->AddComponent(world_);
 
 	AddBounds();
@@ -26,32 +26,48 @@ void MainStage::AddBounds()
 		Point(0, GetHeight()),
 	};
 
-	PhysicBodyPtr bounds = new PhysicBody(world_, PhysicBody::Type::Static);
+	b2BodyDef def;
+	def.type = b2_staticBody;
+	auto bounds = world_->AddBody(&def);
 	for (size_t i = 0; i < vertices.size(); ++i)
 	{
+		b2EdgeShape shape;
 		if (i == vertices.size() - 1)
 		{
-			bounds->AddEdgeShape(vertices[i], vertices[0], 0.0f);
+			shape.Set(physics::LocalToWorld(vertices[i]), physics::LocalToWorld(vertices[0]));
 		}
 		else
 		{
-			bounds->AddEdgeShape(vertices[i], vertices[i + 1], 0.0f);
+			shape.Set(physics::LocalToWorld(vertices[i]), physics::LocalToWorld(vertices[i + 1]));
 		}
+
+		b2FixtureDef def;
+		def.shape = &shape;
+		bounds->GetB2Body()->CreateFixture(&def);
 	}
 }
 
 void MainStage::AddObstacle(Point position, Size size)
 {
-	ShapePtr shape = Shape::CreateRect(Rect(0, 0, size.x, size.y));
-	ShapeActorPtr obstacle = new ShapeActor(shape);
+	RefPtr<Shape> shape = Shape::CreateRect(Rect(0, 0, size.x, size.y));
+	RefPtr<ShapeActor> obstacle = new ShapeActor(shape);
 	obstacle->SetAnchor(0.5f, 0.5f);
 	obstacle->SetPosition(position);
 	obstacle->SetSize(size);
 	obstacle->SetStrokeColor(Color::Gray);
 
-	PhysicBodyPtr body = new PhysicBody(world_, PhysicBody::Type::Static);
-	body->AddRectShape(obstacle->GetSize(), 0.0f);
+	b2BodyDef def;
+	def.type = b2_staticBody;
+	auto body = world_->AddBody(&def);
 	obstacle->AddComponent(body);
+
+	b2PolygonShape b2shape;
+	auto b2size = physics::LocalToWorld(obstacle->GetSize() / 2);
+	b2shape.SetAsBox(b2size.x, b2size.y);
+
+	b2FixtureDef fixture_def;
+	fixture_def.shape = &b2shape;
+	body->GetB2Body()->CreateFixture(&fixture_def);
 
 	this->AddChild(obstacle);
 }
@@ -62,7 +78,7 @@ void MainStage::InitPlanes()
 	Point size = this->GetSize();
 
 	Point leader_pos = Point(size.x / 2, size.y / 2 + 150);
-	PlanePtr leader = AddPlane(leader_pos);
+	RefPtr<Plane> leader = AddPlane(leader_pos);
 
 	const int follower_num = 4;
 	for (int i = 0; i < follower_num; ++i)
@@ -70,38 +86,38 @@ void MainStage::InitPlanes()
 		int row = i / 2 + 1;
 		int neg = (i % 2 == 0) ? -1 : 1;
 
-		PlanePtr follower = AddPlane(Point(leader_pos.x + offset.x * neg * row, leader_pos.y + offset.y * row));
+		RefPtr<Plane> follower = AddPlane(Point(leader_pos.x + offset.x * neg * row, leader_pos.y + offset.y * row));
 
-		auto body1 = leader->GetPhysicBody();
-		auto body2 = follower->GetPhysicBody();
+		auto body1 = leader->GetPhysicBody()->GetB2Body();
+		auto body2 = follower->GetPhysicBody()->GetB2Body();
 
-		DistanceJoint::Param param(body1, body2, body1->GetWorldCenter(), body2->GetWorldCenter());
-		param.frequency_hz = 1.0f;
-		param.damping_ratio = 0.0f;
-		param.collide_connected = true;
+		b2DistanceJointDef joint_def;
+		joint_def.Initialize(body1, body2, body1->GetWorldCenter(), body2->GetWorldCenter());
+		joint_def.frequencyHz = 1.0f;
+		joint_def.dampingRatio = 0.0f;
+		joint_def.collideConnected = true;
 
-		DistanceJointPtr joint = new DistanceJoint(param);
-		world_->AddJoint(joint);
+		world_->AddJoint(&joint_def);
 	}
 
 	for (int i = 0; i < follower_num; i += 2)
 	{
-		auto body1 = followers_[i]->GetPhysicBody();
-		auto body2 = followers_[i + 1]->GetPhysicBody();
+		auto body1 = followers_[i]->GetPhysicBody()->GetB2Body();
+		auto body2 = followers_[i + 1]->GetPhysicBody()->GetB2Body();
 
-		DistanceJoint::Param param(body1, body2, body1->GetWorldCenter(), body2->GetWorldCenter());
-		param.frequency_hz = 0.1f;
-		param.damping_ratio = 0.0f;
-		param.collide_connected = true;
+		b2DistanceJointDef joint_def;
+		joint_def.Initialize(body1, body2, body1->GetWorldCenter(), body2->GetWorldCenter());
+		joint_def.frequencyHz = 0.1f;
+		joint_def.dampingRatio = 0.0f;
+		joint_def.collideConnected = true;
 
-		DistanceJointPtr joint = new DistanceJoint(param);
-		world_->AddJoint(joint);
+		world_->AddJoint(&joint_def);
 	}
 }
 
-PlanePtr MainStage::AddPlane(Point position)
+RefPtr<Plane> MainStage::AddPlane(Point position)
 {
-	PlanePtr plane = new Plane(world_, position);
+	RefPtr<Plane> plane = new Plane(world_, position);
 	AddChild(plane);
 
 	if (!leader_)
@@ -130,13 +146,13 @@ void MainStage::OnUpdate(Duration dt)
 
 	if (input.IsDown(KeyCode::Left))
 	{
-		PhysicBody* body = leader_->GetPhysicBody();
-		body->ApplyTorque(-1.0f, true);
+		auto body = leader_->GetPhysicBody();
+		body->GetB2Body()->ApplyTorque(-0.01f, true);
 	}
 	else if (input.IsDown(KeyCode::Right))
 	{
-		PhysicBody* body = leader_->GetPhysicBody();
-		body->ApplyTorque(1.0f, true);
+		auto body = leader_->GetPhysicBody();
+		body->GetB2Body()->ApplyTorque(0.01f, true);
 	}
 
 	Vec2 force;
@@ -151,8 +167,8 @@ void MainStage::OnUpdate(Duration dt)
 
 	if (!force.IsOrigin())
 	{
-		PhysicBody* body = leader_->GetPhysicBody();
-		body->ApplyForceToCenter(body->GetWorldVector(force));
+		auto body = leader_->GetPhysicBody();
+		body->GetB2Body()->ApplyForceToCenter(physics::LocalToWorld(body->GetWorldVector(force)), true);
 	}
 
 	for (auto follower : followers_)

@@ -1,6 +1,6 @@
 #include "Plane.h"
 
-Plane::Plane(PhysicWorldPtr world, Point position)
+Plane::Plane(RefPtr<physics::World> world, Point position)
 {
 	float side = radius_ * math::Sqrt(2.0f);
 	float offset = radius_ - side / 2 + radius_ / 10;
@@ -16,7 +16,7 @@ Plane::Plane(PhysicWorldPtr world, Point position)
 	maker.AddLines(vertices);
 	maker.EndPath(true);
 
-	ShapePtr chassis = maker.GetShape();
+	RefPtr<Shape> chassis = maker.GetShape();
 	this->SetShape(chassis);
 
 	this->SetSize(radius_ * 2, radius_ * 2);
@@ -24,13 +24,28 @@ Plane::Plane(PhysicWorldPtr world, Point position)
 	this->SetPosition(position);
 	this->SetStrokeColor(Color::Gray);
 
-	PhysicBodyPtr body = new PhysicBody(world, PhysicBody::Type::Dynamic);
-	body->AddCircleShape(radius_, 2.0f, 0.0f);
-	body->SetAngularDamping(20.0f);
-	body->SetLinearDamping(0.5f);
-	this->AddComponent(body);
+	b2BodyDef def;
+	def.type = b2_dynamicBody;
+	def.angularDamping = 20.f;
+	def.linearDamping = 0.5f;
+	body_ = world->AddBody(&def);
+	this->AddComponent(body_);
+
+	b2CircleShape b2shape;
+	b2shape.m_radius = physics::LocalToWorld(radius_);
+
+	b2FixtureDef fixture_def;
+	fixture_def.density = 2.0f;
+	fixture_def.friction = 0.0f;
+	fixture_def.shape = &b2shape;
+	body_->GetB2Body()->CreateFixture(&fixture_def);
 
 	border_brush_ = new Brush(Color::BlueViolet);
+}
+
+RefPtr<physics::Body> Plane::GetPhysicBody() const
+{
+	return body_;
 }
 
 void Plane::OnRender(RenderContext& ctx)
